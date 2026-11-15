@@ -448,6 +448,7 @@ _EOF_
 						'110' ': Orange Pi 6/6 Plus'
 						'86' ': ASUS Tinker Board 2'
 						'109' ': LubanCat 4'
+						'120' ': KICKPI K1A'
 						'23' ': Generic Rockchip RK3328'
 						'24' ': Generic Rockchip RK3399'
 						'26' ': Generic Allwinner H5'
@@ -644,7 +645,7 @@ _EOF_
 		[[ -d '/boot' ]] || G_EXEC mkdir /boot
 
 		# Hardware specific boot configs
-		local armbian_packages=0
+		local armbian_packages=0 k1_packages=0
 		if (( $G_HW_MODEL < 10 ))
 		then
 			G_EXEC mv "$dir/.build/images/RPi/config.txt" /boot/firmware/
@@ -671,10 +672,12 @@ _EOF_
 			G_EXEC ln -sf /etc/kernel/post{inst,rm}.d/dietpi-initramfs_cleanup
 
 		# SBCs using Armbian build system for kernel/bootloader packages and boot.scr
-		elif [[ $G_HW_MODEL =~ ^(12|13|14|15|16|17|18|19|40|42|43|44|45|46|47|48|52|54|55|56|57|58|59|60|63|64|65|66|67|68|72|73|74|76|77|78|79|80|82|83|85|86|87|88|89|90|91|92|93|94|95|96|99|100|101|102|103|104|105|106|107|108|109)$ ]]
+		elif [[ $G_HW_MODEL =~ ^(12|13|14|15|16|17|18|19|40|42|43|44|45|46|47|48|52|54|55|56|57|58|59|60|63|64|65|66|67|68|72|73|74|76|77|78|79|80|82|83|85|86|87|88|89|90|91|92|93|94|95|96|99|100|101|102|103|104|105|106|107|108|109|120)$ ]]
 		then
 			# Amlogic 64-bit
 			armbian_packages=1
+			# KICKPI K1A: locally built kernel/U-Boot instead of Armbian packages
+			(( $G_HW_MODEL == 120 )) && armbian_packages=0 k1_packages=1
 			G_EXEC mv "$dir/.build/images/U-Boot/boot.cmd" /boot/boot.cmd
 			G_EXEC mv "$dir/.build/images/U-Boot/dietpiEnv.txt" /boot/dietpiEnv.txt
 			G_CONFIG_INJECT 'rootdev=' "rootdev=UUID=$(findmnt -Ufnro UUID /)" /boot/dietpiEnv.txt
@@ -731,7 +734,7 @@ setenv bootlabel "DietPi"' /boot/boot.cmd
 				G_EXEC sed --follow-symlinks -i 's/ttyAML0,115200/ttyS0,921600/' /boot/dietpiEnv.txt
 
 			# Rockchip 64-bit
-			elif [[ $G_HW_MODEL =~ ^(14|18|19|42|43|46|47|55|56|58|68|72|73|76|77|78|79|80|82|85|86|87|90|91|92|93|94|95|100|101|102|103|104|105|106|109)$ ]]
+			elif [[ $G_HW_MODEL =~ ^(14|18|19|42|43|46|47|55|56|58|68|72|73|76|77|78|79|80|82|85|86|87|90|91|92|93|94|95|100|101|102|103|104|105|106|109|120)$ ]]
 			then
 				# Load addresses
 				G_EXEC sed --follow-symlinks -Ei '/^setenv (kernel|fdt)_addr_r/d' /boot/boot.cmd
@@ -760,6 +763,7 @@ setenv bootlabel "DietPi"' /boot/boot.cmd
 					;;
 					73) G_CONFIG_INJECT 'fdtfile=' 'fdtfile=rockchip/rk3308-rock-pi-s.dtb' /boot/dietpiEnv.txt;; # U-Boot does not pass any ${fdtfile}
 					77) G_CONFIG_INJECT 'fdtfile=' 'fdtfile=rockchip/rk3568-rock-3a.dtb' /boot/dietpiEnv.txt;;
+					120) G_CONFIG_INJECT 'fdtfile=' 'fdtfile=rockchip/rk3568-kickpi-k1a.dtb' /boot/dietpiEnv.txt;;
 					78) G_CONFIG_INJECT 'fdtfile=' 'fdtfile=rockchip/rk3588-rock-5b.dtb' /boot/dietpiEnv.txt;;
 					79)
 						case $HW_VARIANT in
@@ -776,6 +780,7 @@ setenv bootlabel "DietPi"' /boot/boot.cmd
 				case $G_HW_MODEL in
 					14) G_CONFIG_INJECT 'overlay_prefix=' 'overlay_prefix=rockchip-rk3588-odroidm2 rockchip-rk3588' /boot/dietpiEnv.txt;;
 					77) G_CONFIG_INJECT 'overlay_prefix=' 'overlay_prefix=rockchip-rk3568-rock-3a rockchip-rk3568-hk rockchip-rk3566' /boot/dietpiEnv.txt;;
+					120) G_CONFIG_INJECT 'overlay_prefix=' 'overlay_prefix=rockchip-rk3568 rockchip-rk3566' /boot/dietpiEnv.txt;;
 					78) G_CONFIG_INJECT 'overlay_prefix=' 'overlay_prefix=rock-5b rock-5 rockchip-rk3588 rk3588' /boot/dietpiEnv.txt;;
 					80|106) G_CONFIG_INJECT 'overlay_prefix=' 'overlay_prefix=orangepi-5 rockchip-rk3588 rk3588' /boot/dietpiEnv.txt;;
 					82) G_CONFIG_INJECT 'overlay_prefix=' 'overlay_prefix=orangepi-5-plus rockchip-rk3588 rk3588' /boot/dietpiEnv.txt;;
@@ -812,6 +817,18 @@ setenv bootlabel "DietPi"' /boot/boot.cmd
 					102|103) G_EXEC sed --follow-symlinks -i 's/ttyAML0,115200/ttyS0,1500000/' /boot/dietpiEnv.txt;; # RK3528/RK3576 mainline
 					*) G_EXEC sed --follow-symlinks -i 's/ttyAML0,115200/ttyS2,1500000/' /boot/dietpiEnv.txt;; # mainline
 				esac
+				# KICKPI K1A: no initramfs, so boot without one unless it exists
+				if (( $G_HW_MODEL == 120 ))
+				then
+					G_EXEC sed --follow-symlinks -i '/initrd.img"$/d' /boot/boot.cmd
+					# shellcheck disable=SC2016
+					G_EXEC sed --follow-symlinks -i '/^booti /c\
+if load "${devtype}" "${devnum}" "${ramdisk_addr_r}" "${prefix}initrd.img"; then\
+\tbooti "${kernel_addr_r}" "${ramdisk_addr_r}:${filesize}" "${fdt_addr_r}"\
+else\
+\tbooti "${kernel_addr_r}" - "${fdt_addr_r}"\
+fi' /boot/boot.cmd
+				fi
 
 			# ASUS Tinker Board (32-bit)
 			elif (( $G_HW_MODEL == 52 ))
@@ -1164,6 +1181,24 @@ _EOF_'
 			# Remove obsolete combined keyring
 			[[ -f '/etc/apt/trusted.gpg' ]] && G_EXEC rm /etc/apt/trusted.gpg
 			[[ -f '/etc/apt/trusted.gpg~' ]] && G_EXEC rm '/etc/apt/trusted.gpg~'
+
+		# KICKPI K1A: kernel, U-Boot and Wi-Fi/BT firmware from k1/build.sh, bind-mounted at /mnt/k1
+		elif (( $k1_packages ))
+		then
+			[[ -d '/mnt/k1/debs' ]] || { G_DIETPI-NOTIFY 1 'KICKPI K1A artifacts missing in /mnt/k1, aborting ...'; exit 1; }
+			G_AGI u-boot-tools
+			G_EXEC mkdir -p /etc/kernel/post{inst,rm}.d /usr/lib/u-boot-kickpi-k1a
+			G_EXEC cp /mnt/k1/rootfs/etc/kernel/postinst.d/zz-dietpi-k1a /etc/kernel/postinst.d/zz-dietpi-k1a
+			G_EXEC chmod +x /etc/kernel/postinst.d/zz-dietpi-k1a
+			G_EXEC_OUTPUT=1 G_EXEC dpkg -i /mnt/k1/debs/linux-image-*.deb
+			G_EXEC cp -a /mnt/k1/firmware/. /usr/lib/firmware/
+			G_EXEC cp -a /mnt/k1/rootfs/. /
+			G_EXEC cp /mnt/k1/u-boot/u-boot-rockchip.bin /usr/lib/u-boot-kickpi-k1a/
+			# STB live-debug tooling and Bluetooth stack
+			G_AGI adb picocom minicom tmux ser2net bluez
+			G_EXEC mkimage -C none -A arm64 -T script -d /boot/boot.cmd /boot/boot.scr
+			G_EXEC dd if=/usr/lib/u-boot-kickpi-k1a/u-boot-rockchip.bin of="$BOOT_DEVICE" bs=512 seek=64 conv=notrunc,fsync
+			G_EXEC rm -f /boot/uImage /boot/uInitrd* /boot/armbianEnv.txt /boot/uEnv.txt
 
 		# DietPi-Build with Armbian kernel/bootloader/firmware
 		elif (( $armbian_packages ))

@@ -1,0 +1,16 @@
+#!/bin/sh
+# KICKPI K1A: put the kernel Image and the board DTB where DietPi's boot.scr loads them.
+# Called by the kernel package postinst as: zz-dietpi-k1a <version> [<image path>]
+set -e
+version="$1"
+image="/boot/vmlinuz-${version}"
+[ -f "${image}" ] || exit 0
+if gzip -t "${image}" 2>/dev/null; then
+  gzip -dc "${image}" > /boot/Image.new
+else
+  cp "${image}" /boot/Image.new
+fi
+mv /boot/Image.new /boot/Image
+mkdir -p /boot/dtb/rockchip
+cp "/usr/lib/linux-image-${version}/rockchip/rk3568-kickpi-k1a.dtb" /boot/dtb/rockchip/
+echo "zz-dietpi-k1a: /boot/Image and /boot/dtb/rockchip/rk3568-kickpi-k1a.dtb from ${version}"

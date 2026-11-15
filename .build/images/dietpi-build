@@ -192,6 +192,7 @@ case $HW_MODEL in
 	108) iname='OrangePiZero3W' HW_ARCH=3 partition_start=32 root_size='sun60iw2';;
 	109) iname='LubanCat4' HW_ARCH=3 partition_start=16 root_size='rockchip64';;
 	110) iname='OrangePi6' HW_ARCH=3 PTTYPE='gpt' efi_size=64 root_size='cixp1';;
+	120) iname='KickPiK1A' HW_ARCH=3 PTTYPE='gpt' partition_start=16 root_size='rockchip64';;
 	*) Error_Exit "Invalid hardware model \"$HW_MODEL\" passed";;
 esac
 [[ $root_size == 'rk35xx' && $RK35XX_MAINLINE == 1 ]] && root_size='rockchip64'
@@ -310,7 +311,16 @@ fi
 G_AG_CHECK_INSTALL_PREREQ --no-install-recommends parted mmdebstrap systemd-container xz-utils "${apackages[@]}"
 
 # Register QEMU binfmt configs
-(( $emulation )) && G_EXEC systemctl restart systemd-binfmt
+if (( $emulation ))
+then
+	if [[ -d '/run/systemd/system' ]]
+	then
+		G_EXEC systemctl restart systemd-binfmt
+	else
+		findmnt /proc/sys/fs/binfmt_misc > /dev/null || G_EXEC mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc
+		G_EXEC /usr/lib/systemd/systemd-binfmt
+	fi
+fi
 
 # Bootstrap archive keyring if missing
 if [[ ! -f $keyring ]]
@@ -583,6 +593,8 @@ if [[ $HW_MODEL != 75 ]]
 then
 	abind=("--bind=$FP_LOOP" '--bind=/dev/disk')
 	for i in "${FP_LOOP}p"*; do abind+=("--bind=$i"); done
+	# KICKPI K1A: kernel, U-Boot and firmware built by k1/build.sh
+	[[ $HW_MODEL == 120 ]] && { [[ -d $K1_ARTIFACTS ]] || Error_Exit 'K1_ARTIFACTS directory missing'; abind+=("--bind-ro=$K1_ARTIFACTS:/mnt/k1"); }
 fi
 systemd-nspawn -bD rootfs "${abind[@]}" || { G_DIETPI-NOTIFY 1 'systemd-nspawn failed, aborting ...'; journalctl -n 25; ss -tlpn; df -h; free -h; exit 1; }
 
