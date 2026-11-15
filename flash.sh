@@ -29,5 +29,7 @@ docker run --rm --privileged -v /dev:/dev -v "$(pwd):/work" -w /work \
 rm -f k1/out/provision.pub
 
 echo "=== Flashing ${OUT} via U-Boot rockusb (relay ${RELAY}, console ${SERIAL})"
-"${BURN}" --mode raw --entry uboot --image "${OUT}" --serial "${SERIAL}" --relay "${RELAY}" \
+RUN=""
+[ -x "$(command -v "${BURN}" || echo "${BURN}")" ] || RUN="python3"
+${RUN} "${BURN}" --mode raw --entry uboot --image "${OUT}" --serial "${SERIAL}" --relay "${RELAY}" \
   --session-dir k1/logs/burn --ntfy ""

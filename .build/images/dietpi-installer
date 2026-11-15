@@ -820,6 +820,8 @@ setenv bootlabel "DietPi"' /boot/boot.cmd
 				# KICKPI K1A: no initramfs, so boot without one unless it exists
 				if (( $G_HW_MODEL == 120 ))
 				then
+					# Without initramfs the kernel resolves only PARTUUID=, not UUID=
+					G_CONFIG_INJECT 'rootdev=' "rootdev=PARTUUID=$(findmnt -Ufnro PARTUUID /)" /boot/dietpiEnv.txt
 					G_EXEC sed --follow-symlinks -i '/initrd.img"$/d' /boot/boot.cmd
 					# shellcheck disable=SC2016
 					G_EXEC sed --follow-symlinks -i '/^booti /c\

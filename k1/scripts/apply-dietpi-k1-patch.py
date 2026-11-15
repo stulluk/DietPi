@@ -121,6 +121,8 @@ patch(
   "\t\t\t\t# KICKPI K1A: no initramfs, so boot without one unless it exists\n"
   "\t\t\t\tif (( $G_HW_MODEL == 120 ))\n"
   "\t\t\t\tthen\n"
+  "\t\t\t\t\t# Without initramfs the kernel resolves only PARTUUID=, not UUID=\n"
+  "\t\t\t\t\tG_CONFIG_INJECT 'rootdev=' \"rootdev=PARTUUID=$(findmnt -Ufnro PARTUUID /)\" /boot/dietpiEnv.txt\n"
   "\t\t\t\t\tG_EXEC sed --follow-symlinks -i '/initrd.img\"$/d' /boot/boot.cmd\n"
   "\t\t\t\t\t# shellcheck disable=SC2016\n"
   "\t\t\t\t\tG_EXEC sed --follow-symlinks -i '/^booti /c\\\n"
