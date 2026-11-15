@@ -28,8 +28,21 @@ docker run --rm --privileged -v /dev:/dev -v "$(pwd):/work" -w /work \
          && chown $(id -u):$(id -g) '${OUT}'"
 rm -f k1/out/provision.pub
 
-echo "=== Flashing ${OUT} via U-Boot rockusb (relay ${RELAY}, console ${SERIAL})"
+LOADER="$(find k1/out/u-boot -name "rk356x_loader_*.bin" | head -n1)"
+ETH_IP="${K1_ETH_IP:-192.168.1.113}"
 RUN=""
 [ -x "$(command -v "${BURN}" || echo "${BURN}")" ] || RUN="python3"
-${RUN} "${BURN}" --mode raw --entry uboot --image "${OUT}" --serial "${SERIAL}" --relay "${RELAY}" \
+if ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
+     -o UserKnownHostsFile=/dev/null "root@${ETH_IP}" true 2>/dev/null; then
+  echo "=== Flashing ${OUT}: Linux is up, Maskrom via SSH loader erase (${ETH_IP})"
+  ENTRY="--entry ssh --ssh-target root@${ETH_IP} --miniloader ${LOADER}"
+else
+  echo "=== Flashing ${OUT}: U-Boot rockusb (relay ${RELAY}, console ${SERIAL})"
+  ENTRY="--entry uboot --relay ${RELAY} --miniloader ${LOADER}"
+fi
+# shellcheck disable=SC2086 # ENTRY is a list of options
+${RUN} "${BURN}" --mode raw ${ENTRY} --image "${OUT}" --serial "${SERIAL}" \
   --session-dir k1/logs/burn --ntfy ""
+
+echo "=== Post-install over SSH (Bluetooth, Wi-Fi)"
+k1/scripts/k1-postinstall.sh "${ETH_IP}"

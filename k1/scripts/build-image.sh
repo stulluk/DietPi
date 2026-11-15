@@ -19,7 +19,15 @@ cp -a "${K1_DIR}/rootfs" "${OUT}/rootfs"
 
 mkdir -p "${IMG_WORK}"
 cd "${IMG_WORK}"
-rm -f DietPi_KickPiK1A-*.img
+# Clean leftovers of an interrupted run: mounts, loop devices and the rootfs dir.
+if [[ -d rootfs ]]; then
+  umount -R rootfs 2>/dev/null || true
+  rmdir rootfs
+fi
+for loop in $(losetup -j "${IMG_WORK}/DietPi_KickPiK1A-ARMv8-Trixie.img" -O NAME -n 2>/dev/null); do
+  losetup -d "${loop}" || true
+done
+rm -f DietPi_KickPiK1A-*.img .#rootfs.lck
 
 export G_GITOWNER="${DIETPI_OWNER}" G_GITBRANCH="${DIETPI_BRANCH}" K1_ARTIFACTS="${OUT}" KEEP_IMAGE=1
 bash "${REPO}/.build/images/dietpi-build" -m 120 -d 8 -o "${DIETPI_OWNER}" -b "${DIETPI_BRANCH}" \

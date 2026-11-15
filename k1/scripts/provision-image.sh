@@ -42,6 +42,7 @@ for part in "${LOOP}"p*; do
     set_key "${f}" AUTO_SETUP_SSH_PUBKEY "${PUBKEY}"
     set_key "${f}" SURVEY_OPTED_IN 0
     set_key "${f}" CONFIG_SERIAL_CONSOLE_ENABLE 1
+    set_key "${f}" AUTO_SETUP_SSH_SERVER_INDEX -2
     echo "provisioned ${f#"${MNT}"} on ${part}"
     edited=$((edited + 1))
   done

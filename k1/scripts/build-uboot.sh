@@ -31,6 +31,7 @@ make -C "${SRC}/u-boot" O="${UB_OUT}" -j"${JOBS}" BL31="${BL31}" ROCKCHIP_TPL="$
 mkdir -p "${OUT}"
 cp "${UB_OUT}/u-boot-rockchip.bin" "${UB_OUT}/idbloader.img" "${UB_OUT}/u-boot.itb" \
   "${UB_OUT}/.config" "${OUT}/"
-# Rockusb loader for Maskrom recovery (rkdeveloptool db), from rkbin.
-cp "${SRC}/rkbin/bin/rk35/rk356x_spl_loader"*.bin "${OUT}/" 2>/dev/null || true
+# Rockusb miniloader for Maskrom (rkdeveloptool db), packed from the pinned rkbin blobs.
+( cd "${SRC}/rkbin" && ./tools/boot_merger RKBOOT/RK3568MINIALL.ini )
+mv -f "${SRC}"/rkbin/rk356x_loader_*.bin "${OUT}/"
 ls -l "${OUT}"

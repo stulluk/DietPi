@@ -6,6 +6,7 @@
  *  - WLAN power enable is gpio3 PD5 (host wake is PD4)
  *  - GMAC RGMII tx/rx delays: gmac0 0x21/0x3c, gmac1 0x2f/0x39
  *  - no zero local-mac-address (U-Boot derives stable MACs from the CPU id)
+ *  - WLAN SDIO without UHS modes (CMD11 timeout on this board)
  */
 
 /dts-v1/;
@@ -879,10 +880,8 @@
 	non-removable;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc2m0_bus4 &sdmmc2m0_cmd &sdmmc2m0_clk>;
-	sd-uhs-sdr12;
-	sd-uhs-sdr25;
-	sd-uhs-sdr50;
-	sd-uhs-sdr104;
+	/* No UHS: the CMD11 voltage switch times out on the K1A (also on vendor Android),
+	 * costing ~10 s per boot before the card falls back to 50 MHz high speed. */
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	status = "okay";
