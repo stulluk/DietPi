@@ -596,6 +596,7 @@ then
 	# KICKPI K1A: kernel, U-Boot and firmware built by k1/build.sh
 	[[ $HW_MODEL == 120 ]] && { [[ -d $K1_ARTIFACTS ]] || Error_Exit 'K1_ARTIFACTS directory missing'; abind+=("--bind-ro=$K1_ARTIFACTS:/mnt/k1"); }
 fi
+[[ -d '/run/systemd/system' ]] || abind+=('--register=no')
 systemd-nspawn -bD rootfs "${abind[@]}" || { G_DIETPI-NOTIFY 1 'systemd-nspawn failed, aborting ...'; journalctl -n 25; ss -tlpn; df -h; free -h; exit 1; }
 
 # Undo workarounds

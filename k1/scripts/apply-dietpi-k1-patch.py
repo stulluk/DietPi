@@ -61,6 +61,14 @@ patch(
   "\t[[ $HW_MODEL == 120 ]] && { [[ -d $K1_ARTIFACTS ]] || Error_Exit 'K1_ARTIFACTS directory missing'; abind+=(\"--bind-ro=$K1_ARTIFACTS:/mnt/k1\"); }\n",
 )
 
+# systemd-nspawn without a host systemd/D-Bus (Docker): do not register with systemd-machined.
+patch(
+  BUILD,
+  "systemd-nspawn -bD rootfs \"${abind[@]}\" ||",
+  "[[ -d '/run/systemd/system' ]] || abind+=('--register=no')\n"
+  "systemd-nspawn -bD rootfs \"${abind[@]}\" ||",
+)
+
 # --- dietpi-installer -----------------------------------------------------------------------
 patch(
   INSTALLER,
