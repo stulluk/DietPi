@@ -21,7 +21,7 @@ mkdir -p "${IMG_WORK}"
 cd "${IMG_WORK}"
 rm -f DietPi_KickPiK1A-*.img
 
-export G_GITOWNER="${DIETPI_OWNER}" G_GITBRANCH="${DIETPI_BRANCH}" K1_ARTIFACTS="${OUT}"
+export G_GITOWNER="${DIETPI_OWNER}" G_GITBRANCH="${DIETPI_BRANCH}" K1_ARTIFACTS="${OUT}" KEEP_IMAGE=1
 bash "${REPO}/.build/images/dietpi-build" -m 120 -d 8 -o "${DIETPI_OWNER}" -b "${DIETPI_BRANCH}" \
   --skip-archive
 

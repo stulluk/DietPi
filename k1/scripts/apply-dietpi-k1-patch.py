@@ -65,8 +65,15 @@ patch(
 patch(
   BUILD,
   "systemd-nspawn -bD rootfs \"${abind[@]}\" ||",
-  "[[ -d '/run/systemd/system' ]] || abind+=('--register=no')\n"
+  "[[ -d '/run/systemd/system' ]] || abind+=('--register=no' '--keep-unit')\n"
   "systemd-nspawn -bD rootfs \"${abind[@]}\" ||",
+)
+
+# Keep the raw image when the caller asks for it (--skip-archive output, used by k1/build-image.sh).
+patch(
+  BUILD,
+  "\t[[ -f $OUTPUT_IMG_NAME.img ]] && G_EXEC rm \"$OUTPUT_IMG_NAME.img\"\n",
+  "\t[[ -f $OUTPUT_IMG_NAME.img && ${KEEP_IMAGE:-0} != 1 ]] && G_EXEC rm \"$OUTPUT_IMG_NAME.img\"\n",
 )
 
 # --- dietpi-installer -----------------------------------------------------------------------
