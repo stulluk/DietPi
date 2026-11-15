@@ -123,6 +123,8 @@ patch(
   "\t\t\t\tthen\n"
   "\t\t\t\t\t# Without initramfs the kernel resolves only PARTUUID=, not UUID=\n"
   "\t\t\t\t\tG_CONFIG_INJECT 'rootdev=' \"rootdev=PARTUUID=$(findmnt -Ufnro PARTUUID /)\" /boot/dietpiEnv.txt\n"
+  "\t\t\t\t\t# Reboot 10 s after a kernel panic instead of hanging (the relay cannot always reset the board)\n"
+  "\t\t\t\t\tG_EXEC sed --follow-symlinks -i '/^extraargs=/{/ panic=/!s/$/ panic=10/}' /boot/dietpiEnv.txt\n"
   "\t\t\t\t\tG_EXEC sed --follow-symlinks -i '/initrd.img\"$/d' /boot/boot.cmd\n"
   "\t\t\t\t\t# shellcheck disable=SC2016\n"
   "\t\t\t\t\tG_EXEC sed --follow-symlinks -i '/^booti /c\\\n"
