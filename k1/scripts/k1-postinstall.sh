@@ -28,7 +28,10 @@ done
 
 echo "=== Bluetooth"
 ${SSH} "root@${HOST}" '/boot/dietpi/func/dietpi-set_hardware bluetooth 1 >/dev/null 2>&1;
-  bluetoothctl power on >/dev/null 2>&1 || true; hciconfig hci0 | sed -n 3p'
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    bluetoothctl power on >/dev/null 2>&1 || true
+    hciconfig hci0 | grep -q "UP RUNNING" && break; sleep 1
+  done; hciconfig hci0 | sed -n 3p'
 
 echo "=== Wi-Fi (${SSIDS})"
 # shellcheck disable=SC2016 # expanded on the board
