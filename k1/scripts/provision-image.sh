@@ -37,7 +37,9 @@ for part in "${LOOP}"p*; do
     set_key "${f}" AUTO_SETUP_AUTOMATED 1
     set_key "${f}" AUTO_SETUP_NET_HOSTNAME "${HOSTNAME_K1}"
     set_key "${f}" AUTO_SETUP_NET_ETHERNET_ENABLED 1
-    set_key "${f}" AUTO_SETUP_NET_WIFI_ENABLED 1
+    # Wi-Fi off at first boot: DietPi then configures only Wi-Fi (no SSID yet) and no eth0.
+    # k1-postinstall.sh enables Wi-Fi over eth0 afterwards.
+    set_key "${f}" AUTO_SETUP_NET_WIFI_ENABLED 0
     set_key "${f}" AUTO_SETUP_TIMEZONE Europe/Istanbul
     set_key "${f}" AUTO_SETUP_SSH_PUBKEY "${PUBKEY}"
     set_key "${f}" SURVEY_OPTED_IN 0

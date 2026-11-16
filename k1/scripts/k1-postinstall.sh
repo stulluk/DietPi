@@ -9,13 +9,11 @@
 set -eu
 
 HOST="${1:-192.168.1.113}"
-KH="$(dirname "$0")/../out/known_hosts_k1"
-SSH="ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${KH}"
+# First-run setup swaps Dropbear for OpenSSH, so the host key changes mid-way: do not pin it.
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
 SSIDS="${K1_SSIDS:-ST-EV-5.0:10 ST-EV-2.4:5}"
 
 [ -n "${ST_EV_PWD:-}" ] || { echo "ERROR: ST_EV_PWD is not set (add it to /etc/secrets)"; exit 1; }
-mkdir -p "$(dirname "${KH}")"
-: > "${KH}" # a reflashed board has new host keys
 
 echo "=== waiting for SSH on ${HOST}"
 i=0
@@ -43,6 +41,11 @@ printf '%s\n' "${ST_EV_PWD}" | ${SSH} "root@${HOST}" "SSIDS='${SSIDS}' sh -c '"'
     done
   } > /etc/wpa_supplicant/wpa_supplicant.conf
   unset P
+  /boot/dietpi/func/dietpi-set_hardware wifimodules enable >/dev/null 2>&1 || true
+  modprobe rtw88_8822cs 2>/dev/null || true
+  printf "%s\n" "allow-hotplug wlan0" "iface wlan0 inet dhcp" \
+    "wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf" > /etc/network/interfaces.d/wlan0.conf
+  sed -i "s/^AUTO_SETUP_NET_WIFI_ENABLED=.*/AUTO_SETUP_NET_WIFI_ENABLED=1/" /boot/dietpi.txt
   nohup sh -c "ifdown wlan0; ifup wlan0" >/root/ifup-wlan0.log 2>&1 &
 '"'"
 sleep 20
