@@ -1198,6 +1198,8 @@ _EOF_'
 			G_EXEC cp -a /mnt/k1/firmware/. /usr/lib/firmware/
 			G_EXEC cp -a /mnt/k1/rootfs/. /
 			G_EXEC cp /mnt/k1/u-boot/u-boot-rockchip.bin /usr/lib/u-boot-kickpi-k1a/
+			# Give up DHCP after 15 s (no cable on eth0 in the field) instead of 60 s
+			grep -q '^timeout ' /etc/dhcp/dhclient.conf || G_EXEC eval "echo 'timeout 15;' >> /etc/dhcp/dhclient.conf"
 			# STB live-debug tooling and Bluetooth stack
 			G_AGI adb picocom minicom tmux ser2net bluez
 			G_EXEC mkimage -C none -A arm64 -T script -d /boot/boot.cmd /boot/boot.scr

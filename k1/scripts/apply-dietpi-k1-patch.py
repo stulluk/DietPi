@@ -150,6 +150,8 @@ patch(
   "\t\t\tG_EXEC cp -a /mnt/k1/firmware/. /usr/lib/firmware/\n"
   "\t\t\tG_EXEC cp -a /mnt/k1/rootfs/. /\n"
   "\t\t\tG_EXEC cp /mnt/k1/u-boot/u-boot-rockchip.bin /usr/lib/u-boot-kickpi-k1a/\n"
+  "\t\t\t# Give up DHCP after 15 s (no cable on eth0 in the field) instead of 60 s\n"
+  "\t\t\tgrep -q '^timeout ' /etc/dhcp/dhclient.conf || G_EXEC eval \"echo 'timeout 15;' >> /etc/dhcp/dhclient.conf\"\n"
   "\t\t\t# STB live-debug tooling and Bluetooth stack\n"
   "\t\t\tG_AGI adb picocom minicom tmux ser2net bluez\n"
   "\t\t\tG_EXEC mkimage -C none -A arm64 -T script -d /boot/boot.cmd /boot/boot.scr\n"

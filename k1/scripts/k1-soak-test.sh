@@ -42,7 +42,7 @@ probe() {
     tty=$(ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | wc -l)
     failed=$(systemctl --failed --no-legend | wc -l)
     boot=$(systemd-analyze 2>/dev/null | sed -n "s/.*= \([0-9.]*\)s.*/\1/p")
-    kerr=$(dmesg | grep -ciE "Oops|BUG:|Call trace|panic|soft lockup|rcu_sched self-detected")
+    kerr=$(dmesg | grep -v "Kernel command line" | grep -ciE "Oops|BUG:|Call trace|Kernel panic|soft lockup|rcu_sched self-detected")
     wd=$(systemctl show -p WatchdogDevice --value 2>/dev/null; :)
     echo "ssid=${ssid:-none} signal=${sig:-na} bt=${bt:-none} usb=${usb} tty=${tty} failed=${failed} boot=${boot:-na} kerr=${kerr}"
   ' 2>/dev/null || echo "probe=failed"
