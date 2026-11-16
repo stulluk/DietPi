@@ -28,6 +28,7 @@ done
 
 echo "=== Bluetooth"
 ${SSH} "root@${HOST}" '/boot/dietpi/func/dietpi-set_hardware bluetooth 1 >/dev/null 2>&1;
+  modprobe hci_uart 2>/dev/null; systemctl restart bluetooth 2>/dev/null;
   for i in 1 2 3 4 5 6 7 8 9 10; do
     bluetoothctl power on >/dev/null 2>&1 || true
     hciconfig hci0 | grep -q "UP RUNNING" && break; sleep 1

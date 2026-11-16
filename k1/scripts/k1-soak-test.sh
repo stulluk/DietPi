@@ -67,8 +67,19 @@ for i in $(seq 1 "${ITER}"); do
   te=$(wait_ssh "${ETH_IP}")
   sleep 5
   res="$(probe)"
+  if [[ ${res} == *probe=failed* ]]; then
+    # Keep evidence, then retry once: a short Wi-Fi drop must not hide a real failure.
+    diag="$(dirname "${CSV}")/soak-diag-iter${i}-$(date +%H%M%S).txt"
+    timeout 30 "${SSH[@]}" "root@${ETH_IP}" 'uptime; cat /proc/sys/kernel/random/boot_id;
+      iw dev wlan0 link; ip -br addr; journalctl -b --no-pager | grep -iE "wlan0|wpa|rtw88|sshd" | tail -40' \
+      > "${diag}" 2>&1 || echo "eth0 diag failed too" >> "${diag}"
+    log "  probe failed, diagnostics in ${diag}; retrying in 10 s"
+    sleep 10
+    res="retry $(probe)"
+  fi
   case "${tw}${te}${res}" in
     *timeout*|*probe=failed*|*ssid=none*|*bt=none*) fails=$((fails + 1)); status=FAIL ;;
+    retry*) status=RETRY_OK ;;
     *) status=OK ;;
   esac
   log "iter ${i} ${mode} ${status}: t_wlan=${tw}s t_eth=${te}s ${res}"
