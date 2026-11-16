@@ -1,0 +1,21 @@
+#!/bin/sh
+# KICKPI K1A: the RTL8822CS H5 link sometimes does not sync on the first probe (about 1 of 5
+# cold boots), leaving no hci0. Rebinding the serdev driver always recovers it.
+dev=serial0-0
+drv=/sys/bus/serial/drivers/hci_uart_h5
+[ -e "/sys/bus/serial/devices/${dev}" ] || exit 0
+for try in 1 2 3; do
+  i=0
+  while [ "${i}" -lt 10 ]; do
+    [ -e /sys/class/bluetooth/hci0 ] && { echo "hci0 present (try ${try})"; exit 0; }
+    sleep 1
+    i=$((i + 1))
+  done
+  echo "hci0 missing, rebinding ${dev} (try ${try})"
+  echo "${dev}" > "${drv}/unbind" 2>/dev/null
+  sleep 1
+  echo "${dev}" > "${drv}/bind"
+done
+[ -e /sys/class/bluetooth/hci0 ] && exit 0
+echo "hci0 still missing after 3 rebinds"
+exit 1

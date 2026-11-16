@@ -1,0 +1,12 @@
+[Unit]
+Description=KICKPI K1A: recover the RTL8822CS Bluetooth H5 link if hci0 did not appear
+After=systemd-modules-load.service
+Before=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/k1-bt-rebind
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
