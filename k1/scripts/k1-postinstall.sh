@@ -54,4 +54,5 @@ printf '%s\n' "${ST_EV_PWD}" | ${SSH} "root@${HOST}" "SSIDS='${SSIDS}' sh -c '"'
 '"'"
 sleep 20
 ${SSH} "root@${HOST}" 'iw dev wlan0 link | grep -E "SSID|freq|signal"; ip -4 -br addr show wlan0'
+${SSH} "root@${HOST}" sync # new files must survive a sudden power cut (ext4 delayed allocation)
 echo "=== done"
