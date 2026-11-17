@@ -13,13 +13,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def patch(rel: str, old: str, new: str) -> None:
-  """Replace exactly one occurrence of old with new in ROOT/rel."""
+def patch(rel: str, old: str, new: str, marker: str | None = None) -> None:
+  """Replace exactly one occurrence of old with new in ROOT/rel.
+
+  If marker is given and already present while new is not, an older version of this hunk is
+  applied: stop instead of inserting a second copy (regenerate from upstream first).
+  """
   path = ROOT / rel
   text = path.read_text()
   if new in text:
     print(f"skip (already applied): {rel}: {new.splitlines()[0][:60]}")
     return
+  if marker and marker in text:
+    sys.exit(
+      f"ERROR: {rel}: an older version of this hunk is applied ({marker!r}); regenerate the file"
+      " from upstream (git show 65f36fe48^:<file>) and run this script again",
+    )
   count = text.count(old)
   if count != 1:
     sys.exit(f"ERROR: {rel}: expected 1 match, got {count}: {old[:80]!r}")
@@ -152,6 +161,8 @@ patch(
   "\t\t\tG_EXEC cp /mnt/k1/u-boot/u-boot-rockchip.bin /usr/lib/u-boot-kickpi-k1a/\n"
   "\t\t\t# Give up DHCP after 15 s (no cable on eth0 in the field) instead of 60 s\n"
   "\t\t\tgrep -q '^timeout ' /etc/dhcp/dhclient.conf || G_EXEC eval \"echo 'timeout 15;' >> /etc/dhcp/dhclient.conf\"\n"
+  "\t\t\t# Retry a failed DHCP after 30 s instead of 300 s (e.g. the DHCP server was restarting)\n"
+  "\t\t\tgrep -q '^retry ' /etc/dhcp/dhclient.conf || G_EXEC eval \"echo 'retry 30;' >> /etc/dhcp/dhclient.conf\"\n"
   "\t\t\t# STB live-debug tooling and Bluetooth stack\n"
   "\t\t\tG_AGI adb picocom minicom tmux ser2net bluez\n"
   "\t\t\tG_EXEC mkimage -C none -A arm64 -T script -d /boot/boot.cmd /boot/boot.scr\n"
@@ -160,6 +171,7 @@ patch(
   "\n"
   "\t\t# DietPi-Build with Armbian kernel/bootloader/firmware\n"
   "\t\telif (( $armbian_packages ))\n",
+  marker="\t\telif (( $k1_packages ))\n",
 )
 
 # --- hardware model name, serial console ------------------------------------------------------

@@ -86,8 +86,13 @@ wifi_lines | ${SSH} "root@${HOST}" '
   grep -q "^[[:space:]]*psk=\"" /etc/wpa_supplicant/wpa_supplicant.conf && echo "WARNING: plaintext psk"
   /boot/dietpi/func/dietpi-set_hardware wifimodules enable >/dev/null 2>&1 || true
   modprobe rtw88_8822cs 2>/dev/null || true
-  printf "%s\n" "allow-hotplug wlan0" "iface wlan0 inet dhcp" \
-    "wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf" > /etc/network/interfaces.d/wlan0.conf
+  # Same subnet on eth0 and wlan0: give both a route metric (eth0 100, wlan0 600) so both default
+  # routes coexist; /etc/sysctl.d/90-k1-linkdown.conf drops eth0 routes when the cable is out.
+  grep -q "^[[:space:]]*metric" /etc/network/interfaces.d/eth0.conf 2>/dev/null \
+    || sed -i "/^iface eth0 inet dhcp/a metric 100" /etc/network/interfaces.d/eth0.conf
+  printf "%s\n" "allow-hotplug wlan0" "iface wlan0 inet dhcp" "metric 600" \
+    "wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf" \
+    "post-up /usr/sbin/iw dev wlan0 set power_save off" > /etc/network/interfaces.d/wlan0.conf
   sed -i "s/^AUTO_SETUP_NET_WIFI_ENABLED=.*/AUTO_SETUP_NET_WIFI_ENABLED=1/" /boot/dietpi.txt
   sync
   nohup sh -c "ifdown wlan0; ifup wlan0" >/root/ifup-wlan0.log 2>&1 </dev/null &

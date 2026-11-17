@@ -1,0 +1,2 @@
+# KICKPI K1A: keep Wi-Fi power save off (see /etc/modprobe.d/k1-rtw88.conf)
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="wlan*", RUN+="/usr/sbin/iw dev $name set power_save off"
