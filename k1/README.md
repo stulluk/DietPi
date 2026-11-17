@@ -43,8 +43,11 @@ so push local changes there before you run the image stage.
      but at about 1 MiB/s.
    - Stage 3 checks U-Boot, kernel, systemd and the login prompt on `/dev/serial-ws2`.
 3. `k1/scripts/k1-postinstall.sh` waits for the DietPi first run. It then enables Bluetooth and
-   writes Wi-Fi for `ST-EV-5.0` (priority) and `ST-EV-2.4`. The passphrase comes from `ST_EV_PWD`
-   over SSH stdin, and only hashed PSKs are stored on the board.
+   writes two Wi-Fi networks: `ST_EV_WIFI_SSID_50` (priority) and `ST_EV_WIFI_SSID_24`, both with
+   `ST_EV_WIFI_PWD`, all read from `/etc/secrets`. The values travel only over SSH stdin, and only
+   hashed PSKs are stored on the board. During a Wi-Fi password change,
+   `K1_WIFI_INCLUDE_NEXT=1 k1/scripts/k1-postinstall.sh` also adds both SSIDs with
+   `ST_EV_WIFI_PWD_NEXT` at a lower priority.
 
 ## Tests
 - `k1/scripts/k1-soak-test.sh N` alternates soft reboots and cold relay power cycles. Each
